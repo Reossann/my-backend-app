@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Todo App</title>
+</head>
+<body>
+
+    <h1>Todoリスト</h1>
+    <input type="text" id="todo-title" placeholder="新しいTodoを入力">
+    <button id="add-todo">追加</button>
+    <ul id="todo-list">
+        </ul>
+
+    <script>
+    // Todoリストを再描画する関数
+    const fetchAndRenderTodos = () => {
+        const todoList = document.getElementById('todo-list');
+        todoList.innerHTML = ''; // 一旦リストを空にする
+
+        fetch('http://localhost:3000/todos')
+            .then(response => response.json())
+            .then(todos => {
+                todos.forEach(todo => {
+                    const li = document.createElement('li');
+                    li.textContent = todo.title;
+                    todoList.appendChild(li);
+                });
+            })
+            .catch(error => console.error('データの取得に失敗しました:', error));
+    };
+
+    // ページが読み込まれたら、Todoリストを取得して表示する
+    window.onload = fetchAndRenderTodos;
+
+    // ⭐ここからが新しいコード⭐
+    // 「追加」ボタンがクリックされたときの処理
+    document.getElementById('add-todo').addEventListener('click', () => {
+        const titleInput = document.getElementById('todo-title');
+        const newTodoTitle = titleInput.value;
+
+        // 入力が空の場合は何もしない
+        if (!newTodoTitle) {
+            return;
+        }
+
+        // fetchを使ってPOSTリクエストを送信する
+        fetch('http://localhost:3000/todos', {
+            method: 'POST', // HTTPメソッドをPOSTに指定
+            headers: {
+                'Content-Type': 'application/json', // 送るデータの種類はJSONですよ、と指定
+            },
+            body: JSON.stringify({ title: newTodoTitle }), // 送信するデータ本体
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Todoの追加に失敗しました');
+            }
+            return response.json();
+        })
+        .then(() => {
+            // 追加が成功したら、入力欄を空にしてリストを再描画する
+            titleInput.value = '';
+            fetchAndRenderTodos();
+        })
+        .catch(error => console.error(error));
+    });
+    </script>
+
+</body>
+</html>
