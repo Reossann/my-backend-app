@@ -14,58 +14,88 @@
         </ul>
 
     <script>
-    // Todoリストを再描画する関数
-    const fetchAndRenderTodos = () => {
-        const todoList = document.getElementById('todo-list');
-        todoList.innerHTML = ''; // 一旦リストを空にする
+        // Todoリストをサーバーから取得して画面に描画する関数
+        const fetchAndRenderTodos = async () => {
+            try {
+                // 1. サーバーから最新のTodoリストを取得する
+                const response = await fetch('http://localhost:3000/todos');
+                const todos = await response.json();
 
-        fetch('http://localhost:3000/todos')
-            .then(response => response.json())
-            .then(todos => {
+                const todoList = document.getElementById('todo-list');
+                todoList.innerHTML = ''; // リストを一度空にする
+
+                // 2. 取得したTodoの数だけループ処理を行う
                 todos.forEach(todo => {
                     const li = document.createElement('li');
-                    li.textContent = todo.title;
+
+                    // Todoのタイトルを表示する部分
+                    const titleSpan = document.createElement('span');
+                    titleSpan.textContent = todo.title;
+                    li.appendChild(titleSpan);
+                    
+                    // --- 削除ボタンの作成 ---
+                    const deleteButton = document.createElement('button');
+                    deleteButton.textContent = '削除';
+                    deleteButton.addEventListener('click', async () => {
+                        if (confirm('本当に削除しますか？')) {
+                            await fetch(`http://localhost:3000/todos/${todo.id}`, {
+                                method: 'DELETE'
+                            });
+                            // 削除が成功したら、リストを再描画する
+                            fetchAndRenderTodos(); 
+                        }
+                    });
+                    li.appendChild(deleteButton);
+
+                    // --- 更新ボタンの作成 ---
+                    const editButton = document.createElement('button');
+                    editButton.textContent = '更新';
+                    editButton.addEventListener('click', () => {
+                        // 現在のタイトルをインプットボックスに置き換える（インライン編集）
+                        const newTitle = prompt('新しいタイトルを入力してください', todo.title);
+
+                        if (newTitle && newTitle.trim() !== '') {
+                            fetch(`http://localhost:3000/todos/${todo.id}`, {
+                                method: 'PUT',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ title: newTitle })
+                            }).then(() => {
+                                // 更新が成功したら、リストを再描画する
+                                fetchAndRenderTodos();
+                            });
+                        }
+                    });
+                    li.appendChild(editButton);
+
+                    // 3. 完成したli要素をulに追加する
                     todoList.appendChild(li);
                 });
-            })
-            .catch(error => console.error('データの取得に失敗しました:', error));
-    };
 
-    // ページが読み込まれたら、Todoリストを取得して表示する
-    window.onload = fetchAndRenderTodos;
-
-    // ⭐ここからが新しいコード⭐
-    // 「追加」ボタンがクリックされたときの処理
-    document.getElementById('add-todo').addEventListener('click', () => {
-        const titleInput = document.getElementById('todo-title');
-        const newTodoTitle = titleInput.value;
-
-        // 入力が空の場合は何もしない
-        if (!newTodoTitle) {
-            return;
-        }
-
-        // fetchを使ってPOSTリクエストを送信する
-        fetch('http://localhost:3000/todos', {
-            method: 'POST', // HTTPメソッドをPOSTに指定
-            headers: {
-                'Content-Type': 'application/json', // 送るデータの種類はJSONですよ、と指定
-            },
-            body: JSON.stringify({ title: newTodoTitle }), // 送信するデータ本体
-        })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('Todoの追加に失敗しました');
+            } catch (error) {
+                console.error('データの取得に失敗しました:', error);
             }
-            return response.json();
-        })
-        .then(() => {
+        };
+
+        // ページが読み込まれたら、最初のTodoリストを描画する
+        window.onload = fetchAndRenderTodos;
+
+        // 「追加」ボタンがクリックされたときの処理 (前回と同じ)
+        document.getElementById('add-todo').addEventListener('click', async () => {
+            const titleInput = document.getElementById('todo-title');
+            const newTodoTitle = titleInput.value;
+
+            if (!newTodoTitle) return;
+
+            await fetch('http://localhost:3000/todos', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ title: newTodoTitle }),
+            });
+
             // 追加が成功したら、入力欄を空にしてリストを再描画する
             titleInput.value = '';
             fetchAndRenderTodos();
-        })
-        .catch(error => console.error(error));
-    });
+        });
     </script>
 
 </body>
