@@ -14,11 +14,12 @@
         </ul>
 
     <script>
+        const API_URL = "https://my-backend-app-29cf.onrender.com";
         // Todoリストをサーバーから取得して画面に描画する関数
         const fetchAndRenderTodos = async () => {
             try {
                 // 1. サーバーから最新のTodoリストを取得する
-                const response = await fetch('http://localhost:3000/todos');
+                const response = await fetch(`${API_URL}/todos`);
                 const todos = await response.json();
 
                 const todoList = document.getElementById('todo-list');
@@ -38,7 +39,7 @@
                     deleteButton.textContent = '削除';
                     deleteButton.addEventListener('click', async () => {
                         if (confirm('本当に削除しますか？')) {
-                            await fetch(`http://localhost:3000/todos/${todo.id}`, {
+                            await fetch(`${API_URL}/todos/${todo.id}`, {
                                 method: 'DELETE'
                             });
                             // 削除が成功したら、リストを再描画する
@@ -55,7 +56,7 @@
                         const newTitle = prompt('新しいタイトルを入力してください', todo.title);
 
                         if (newTitle && newTitle.trim() !== '') {
-                            fetch(`http://localhost:3000/todos/${todo.id}`, {
+                            fetch(`${API_URL}/todos/${todo.id}`, {
                                 method: 'PUT',
                                 headers: { 'Content-Type': 'application/json' },
                                 body: JSON.stringify({ title: newTitle })
@@ -86,7 +87,7 @@
 
             if (!newTodoTitle) return;
 
-            await fetch('https://my-backend-app-29cf.onrender.com', {
+            await fetch(`${API_URL}/todos`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ title: newTodoTitle }),
