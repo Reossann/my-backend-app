@@ -3,7 +3,10 @@ const fs = require('fs/promises');
 const cors = require('cors');
 
 const app = express();
-app.use(cors());
+const corsOptions = {
+  origin: 'https://my-frontend-app-armz.onrender.com' // あなたのフロントエンドのURLを許可する
+};
+app.use(cors(corsOptions));
 app.use(express.json());
 
 const port = 3000;
