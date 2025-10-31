@@ -3,16 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="style.css">
     <title>Todo App</title>
 </head>
 <body>
 
-    <h1>Todoリスト</h1>
-    <input type="text" id="todo-title" placeholder="新しいTodoを入力">
-    <button id="add-todo">追加</button>
+    <div class="container">
+        <h1>Todoリスト</h1>
+        <div class="form-group">
+            <input type="text" id="todo-title" placeholder="新しいTodoを入力">
+            <button id="add-todo">追加</button>
+        </div>
+
     <ul id="todo-list">
         </ul>
-
+    </div>
     <script>
         const API_URL = "https://my-backend-app-29cf.onrender.com";
         // Todoリストをサーバーから取得して画面に描画する関数

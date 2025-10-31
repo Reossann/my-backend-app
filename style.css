@@ -1,0 +1,104 @@
+/* --- 全体のスタイル --- */
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    background-color: #f0f2f5;
+    color: #333;
+    margin: 0;
+    padding: 20px;
+    display: flex;
+    justify-content: center;
+}
+
+/* --- アプリのコンテナ --- */
+.container {
+    background-color: #ffffff;
+    padding: 30px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    width: 100%;
+    max-width: 600px;
+}
+
+/* --- 見出しのスタイル --- */
+h1 {
+    text-align: center;
+    color: #1c1e21;
+    margin-bottom: 25px;
+}
+
+/* --- 入力フォームのエリア --- */
+.form-group {
+    display: flex;
+    margin-bottom: 20px;
+}
+
+/* --- テキスト入力欄のスタイル --- */
+#todo-title {
+    flex-grow: 1; /* 横幅を可能な限り広げる */
+    padding: 12px 15px;
+    font-size: 16px;
+    border: 1px solid #dddfe2;
+    border-radius: 6px;
+    margin-right: 10px;
+}
+
+#todo-title:focus {
+    outline: none;
+    border-color: #1877f2; /* Facebookの青色 */
+    box-shadow: 0 0 0 2px rgba(24, 119, 242, 0.2);
+}
+
+/* --- ボタンの共通スタイル --- */
+button {
+    padding: 12px 20px;
+    font-size: 16px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+/* --- 「追加」ボタンのスタイル --- */
+#add-todo {
+    background-color: #1877f2;
+    color: white;
+    font-weight: bold;
+}
+
+#add-todo:hover {
+    background-color: #166fe5;
+}
+
+/* --- Todoリスト全体のスタイル --- */
+#todo-list {
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+}
+
+/* --- Todoリスト各項目のスタイル --- */
+li {
+    display: flex;
+    align-items: center;
+    padding: 15px;
+    background-color: #f7f8fa;
+    border-radius: 6px;
+    margin-bottom: 10px;
+}
+
+li span {
+    flex-grow: 1; /* テキスト部分が横幅を広げる */
+}
+
+/* --- 項目内のボタン（更新・削除）のスタイル --- */
+li button {
+    margin-left: 10px;
+    font-size: 14px;
+    padding: 8px 12px;
+    background-color: #e4e6eb;
+    color: #4b4f56;
+}
+
+li button:hover {
+    background-color: #dcdfe3;
+}
