@@ -1,66 +1,80 @@
 const express = require('express');
-const fs = require('fs/promises');
 const cors = require('cors');
+const { Pool } = require('pg'); // fsの代わりにpgのPoolを読み込む
 
 const app = express();
+const port = 3000;
+
+// --- CORS設定 (変更なし) ---
 const corsOptions = {
-  origin: 'https://my-frontend-app-armz.onrender.com' // あなたのフロントエンドのURLを許可する
+  origin: 'https://my-frontend-app-armz.onrender.com'
 };
 app.use(cors(corsOptions));
 app.use(express.json());
 
-const port = 3000;
-const dbFilePath = './db.json';
+// --- データベース接続設定 ---
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL, // Renderの金庫(環境変数)から接続URLを取得
+  ssl: {
+    rejectUnauthorized: false // Render上のDBに接続するために必要なおまじない
+  }
+});
 
-//【Read】全Todoを取得するAPI (前回と同じ)
+// --- データベースのテーブルを作成する関数 ---
+// サーバー起動時に一度だけ実行され、もしtodosテーブルがなければ作成する
+const createTable = async () => {
+  const queryText = `
+    CREATE TABLE IF NOT EXISTS todos (
+      id SERIAL PRIMARY KEY,
+      title VARCHAR(255) NOT NULL,
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    );
+  `;
+  try {
+    await pool.query(queryText);
+    console.log('テーブルの準備ができました');
+  } catch (err) {
+    console.error('テーブル作成に失敗しました', err);
+  }
+};
+
+// --- APIルートの書き換え ---
+
+//【Read】全Todoを取得するAPI
 app.get('/todos', async (req, res) => {
   try {
-    const data = await fs.readFile(dbFilePath, 'utf-8');
-    const todos = JSON.parse(data);
-    res.json(todos);
+    const result = await pool.query('SELECT * FROM todos ORDER BY id ASC');
+    res.json(result.rows);
   } catch (error) {
     res.status(500).send('サーバーエラー');
   }
 });
 
-//【Create】新しいTodoを作成するAPI (前回と同じ)
+//【Create】新しいTodoを作成するAPI
 app.post('/todos', async (req, res) => {
   try {
-    const newTodo = req.body;
-    newTodo.id = Date.now();
-    const data = await fs.readFile(dbFilePath, 'utf-8');
-    const todos = JSON.parse(data);
-    todos.push(newTodo);
-    await fs.writeFile(dbFilePath, JSON.stringify(todos, null, 2));
-    res.status(201).json(newTodo);
+    const { title } = req.body; // フロントから送られてくるのはtitleだけ
+    const queryText = 'INSERT INTO todos (title) VALUES ($1) RETURNING *';
+    const result = await pool.query(queryText, [title]);
+    res.status(201).json(result.rows[0]);
   } catch (error) {
     res.status(500).send('サーバーエラー');
   }
 });
 
-// ⭐ここから追加⭐
 //【Update】特定のTodoを更新するAPI
 app.put('/todos/:id', async (req, res) => {
   try {
-    const id = parseInt(req.params.id); // URLから更新対象のIDを取得
-    const updatedContent = req.body; // 更新内容を取得
+    const id = parseInt(req.params.id);
+    const { title } = req.body; // 更新する内容
+    
+    const queryText = 'UPDATE todos SET title = $1 WHERE id = $2 RETURNING *';
+    const result = await pool.query(queryText, [title, id]);
 
-    const data = await fs.readFile(dbFilePath, 'utf-8');
-    let todos = JSON.parse(data);
-
-    const todoIndex = todos.findIndex(todo => todo.id === id); // IDが一致するTodoの配列内での位置を探す
-
-    if (todoIndex === -1) {
-      // もしTodoが見つからなければ404エラーを返す
+    if (result.rows.length === 0) {
       return res.status(404).send('Todoが見つかりません');
     }
-
-    // 見つかったTodoを更新する
-    todos[todoIndex] = { ...todos[todoIndex], ...updatedContent };
-
-    await fs.writeFile(dbFilePath, JSON.stringify(todos, null, 2));
-
-    res.json(todos[todoIndex]); // 更新後のTodoを返す
+    res.json(result.rows[0]);
   } catch (error) {
     res.status(500).send('サーバーエラー');
   }
@@ -69,29 +83,23 @@ app.put('/todos/:id', async (req, res) => {
 //【Delete】特定のTodoを削除するAPI
 app.delete('/todos/:id', async (req, res) => {
   try {
-    const id = parseInt(req.params.id); // URLから削除対象のIDを取得
+    const id = parseInt(req.params.id);
+    const queryText = 'DELETE FROM todos WHERE id = $1 RETURNING *';
+    const result = await pool.query(queryText, [id]);
 
-    const data = await fs.readFile(dbFilePath, 'utf-8');
-    let todos = JSON.parse(data);
-
-    const initialLength = todos.length;
-    todos = todos.filter(todo => todo.id !== id); // IDが一致しないものだけを残す
-
-    if (todos.length === initialLength) {
-        // 配列の長さが変わらない＝削除対象がなかった
-        return res.status(404).send('Todoが見つかりません');
+    if (result.rows.length === 0) {
+      return res.status(404).send('Todoが見つかりません');
     }
-
-    await fs.writeFile(dbFilePath, JSON.stringify(todos, null, 2));
-
-    res.status(204).send(); // 成功したが、返すコンテンツはないというステータス
+    res.status(204).send(); // 削除成功
   } catch (error) {
     res.status(500).send('サーバーエラー');
   }
 });
-// ⭐ここまで追加⭐
 
-// サーバーを起動
-app.listen(port, () => {
-  console.log(`サーバーがポート ${port} で起動しました。`);
+// --- サーバー起動 ---
+// サーバーを起動する前に、まずテーブルの準備をする
+createTable().then(() => {
+  app.listen(port, () => {
+    console.log(`サーバーがポート ${port} で起動しました。`);
+  });
 });
